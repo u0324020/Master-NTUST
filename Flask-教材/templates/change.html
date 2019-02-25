@@ -1,0 +1,17 @@
+<html>
+<head>
+<title>
+Flask Wed
+</title>
+</head>
+<body>
+<p><h2 style="color: red;">{% if name %} Hi, {{ name }}. Welcome to my Flask Web. {% endif %}</h2></p>
+<form action="/change" method="POST">
+	<p><label for=""> Change Name:</p>
+	<input type="text" name="name" value="">
+	</label>
+	<input type="submit" value="Submit">
+	<p><a href="/">回首頁</a></p>
+</form>
+</body>
+</html>
