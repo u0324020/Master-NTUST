@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+# ID, Date, Content
 import csv #Import csv
 import tweepy 
 import time
 
-csvFile = open('result.csv', 'a')
+csvFile = open('result_1.csv', 'a')
 csvWriter = csv.writer(csvFile)
 key = '39z9Oe8nXcPPLqvfXOxdWuchs'
 secret ='5DyXE8BJMCEPz8yeyAhnXA6TpH2VVrTrAmyp20VnOznBnltfEu'
@@ -24,13 +25,16 @@ S_user = []
 for tweet in tweepy.Cursor(api.search,q='NTUST').items(10):
 	S_user.append(tweet.user.screen_name)
 	print('Tweet by: @' + tweet.user.screen_name)
-#McDonalds帳號的Follower
+#McDonalds帳號的Follower ID
 ids = []
 for page in tweepy.Cursor(api.followers_ids, screen_name="J_ARamsey").pages():
 	ids.extend(page)
 	print(page)
 	time.sleep(60)
 print(len(ids))
+#ikhsan_chemy帳號的Follower Name
+for follower in api.followers_ids('ikhsan_chemy'):
+    print(api.get_user(follower).screen_name)
 
 #依帳號抓所有資訊存入CSV
 for i in S_user:
