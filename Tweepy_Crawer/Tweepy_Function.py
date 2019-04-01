@@ -5,6 +5,8 @@ import time
 import json
 import tweepy
 import sys
+import base64
+import hashlib
 from tweepy import OAuthHandler
 from pandas import pandas as pd
 
@@ -21,24 +23,41 @@ def get_User_json():
 def get_tweet_reploes(id_str):
 	tweet_arr=[]
 	replies=[]
+	user_name = 'KP_Taipei'
 	non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
-	n = 0
-	for full_tweets in tweepy.Cursor(api.user_timeline,screen_name='KP_Taipei',timeout=999999).items(2):
-		n+=1
-		for tweet in tweepy.Cursor(api.search,q='to:KP_Taipei', since_id=992433028155654144, result_type='recent',timeout=999999).items(1000):
-			if hasattr(tweet, 'in_reply_to_status_id_str'):
-				if (tweet.in_reply_to_status_id_str==full_tweets.id_str):
-					replies.append(tweet.text)
-		now_tweet = full_tweets.text.translate(non_bmp_map)
+	Replies_Count = 0
+	now_time = time.strftime("%Y%m%d")
+	for full_tweets in tweepy.Cursor(api.user_timeline,screen_name=user_name,timeout=999999).items(10):
+		now_tweet = full_tweets.text.translate(non_bmp_map) #tweet
 		tweet_arr.append(now_tweet)
-		#print("Tweet :",full_tweets.text.translate(non_bmp_map))
-		# for elements in replies:
-		# 	print("Replies :",elements)
-		df = pd.DataFrame({'Tweet':now_tweet,'Reply':replies})
-		file_name = 'KP_Taipei'+str(n)+'.csv'
-		df.to_csv(file_name, index = None,header=None,encoding='utf_8_sig')
-		print('Saving {} '.format(file_name))
-		replies.clear()
+		if (now_tweet!=" "):
+			Replies_Count+=1
+			#tweet_arr.append(now_tweet)
+			for tweet in tweepy.Cursor(api.search,q='to:'+user_name, since_id=id_str, result_type='recent',timeout=999999).items(1000):
+				if hasattr(tweet, 'in_reply_to_status_id_str'):
+					if (tweet.in_reply_to_status_id_str==full_tweets.id_str):
+						replies.append(tweet.text) #many_replies
+			B64_user = base64.b64decode(user_name)
+			MD5_user = str(hashlib.md5(B64_user).hexdigest())
+			print(replies)
+			if replies:
+				df = pd.DataFrame({'Tweet_ID':MD5_user+'_'+str(Replies_Count),'Reply':replies}) #secret key ID
+				file_name = MD5_user+'_'+str(Replies_Count)+'.csv'
+				df.to_csv(file_name, index = None,header=None,encoding='utf_8_sig')
+				print('########Saving {} '.format(file_name))
+			replies.clear()
+			title_file_name = MD5_user+'_'+user_name+'_Tweet'+'.csv'
+	csvFile = open(title_file_name, 'a',newline='')
+	csvWriter = csv.writer(csvFile)
+	#df_tw = pd.DataFrame({'Tweet_Title_ID':MD5_user+str(ID_number),'Tweet_content':tweet_arr})
+	csvWriter.writerow(["Tweet_Title_ID", "Tweet_content"])
+	print(tweet_arr)
+	for ID_number in range(0,Replies_Count):
+		#print(tweet_arr[ID_number])
+		csvWriter.writerow([MD5_user+"_"+str(ID_number+1), tweet_arr[ID_number]])
+	csvFile.close()
+	print('########Saving {} '.format(title_file_name))
+	
 
 def get_targetUser():
 	S_user = []
@@ -57,6 +76,7 @@ def get_timeline():
 		csvWriter.writerow(['briian', tweets.created_at, tweets.text.encode('utf-8')])
 		print(tweets.text)
 	csvFile.close()
+
 def get_FollowerID():
 	#McDonalds帳號的Follower ID
 	ids = []
@@ -80,6 +100,7 @@ def get_hashtage():
 		csvWriter.writerow([tweet.created_at, tweet.text.encode('utf-8')])
 
 if __name__ == '__main__':
+	
 	auth = tweepy.OAuthHandler(key,secret)
 	auth.set_access_token(token,token_secret)
 	api = tweepy.API(auth,wait_on_rate_limit=True)
