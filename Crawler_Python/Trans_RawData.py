@@ -26,37 +26,57 @@ def Add_Row(row, col, data):
 
 
 def Feature_country(data):
-    country_list = ["CN", "US", "EU", "TR", "RU", "TW", "BR",
-                    "RO", "IN", "IT", "HU"]  # 'US,EU,TR,RU,TW,BR,RO,IN,IT,HU'
+    country_list = []  # 'US,EU,TR,RU,TW,BR,RO,IN,IT,HU'
     if data == "null":
         data = "0"
     else:
         for c in country_list:
             if c in data:
-                print(data)
-    # print("country"+data)
+                data = "1"
+    if data != "1":
+        data = "0"
+    print("country" + data)
 
 
 def Network_based(ID, df):
     ID = ID
 
-    DNS_list = ["google.com", "youtube.com", "facebook.com", "baidu.com", "wikipedia.org",
-                "yahoo.com", "qq.com", "taobao.com", "tmall.com", "twitter.com", "netflix.com"]
-    ASN_list = ["16509", "203220", "32934", "15169", "11344"]
+    DNS_list = []
+    ASN_list = []
     ####### Domain ######
-    domain_feature = str(df.domain[ID]).lower()
-    if domain_feature == "null":
-        domain_feature = "0"
-    else:
-        for i in DNS_list:
-            if i in domain_feature:
-                domain_feature = "1"
-            else:
-                domain_feature = "0"
+    # domain_feature = str(df.domain[ID]).lower()
+    # for i in DNS_list:
+    #     if i in domain_feature:
+    #         domain_feature = "1"
+    #     else:
+    #         domain_feature = "0"
     # print(domain_feature)
     ####### Country ######
-    country_feature = str(df.country[ID])
-    Feature_country(country_feature)
+    #country_feature = str(df.country[ID])
+    #country_feature = Feature_country(country_feature)
+    ###### Top_City #######
+    # city_feature = str(df.city[ID])
+    # if city_feature != "0":
+    #     city_feature = "1"
+    # print("city = " + city_feature)
+    ########## ASN ###########
+    # asn_feature = str(df.asn[ID])
+    # if asn_feature != "0":
+    #     for i in ASN_list:
+    #         if i in asn_feature:
+    #             asn_feature = "1"
+    #             print("asn = " + asn_feature)
+    #############IP###############
+    securePercentage_feature = str(df.securePercentage[ID])
+    IPv6Percentage_feature = str(df.IPv6Percentage[ID])
+    uniqCountries_feature = str(df.uniqCountries[ID])
+    adBlocked_feature = str(df.adBlocked[ID])
+    page_size_KB_feature = str(df.page_size_KB[ID])
+    IP_count_feature = str(df.IP_count[ID])
+    domains_count_feature = str(df.domains_count[ID])
+    server_count_feature = str(df.server_count[ID])
+    hashes_count_feature = str(df.hashes_count[ID])
+    requests_count_feature = str(df.requests_count[ID])
 
 
 def URL_whois(URL):
