@@ -22,7 +22,41 @@ import datetime
 
 def Add_Row(row, col, data):
     if col == 1 and data == 0:
-        print("Null Values")
+        print("None")
+
+
+def Feature_country(data):
+    country_list = ["CN", "US", "EU", "TR", "RU", "TW", "BR",
+                    "RO", "IN", "IT", "HU"]  # 'US,EU,TR,RU,TW,BR,RO,IN,IT,HU'
+    if data == "null":
+        data = "0"
+    else:
+        for c in country_list:
+            if c in data:
+                print(data)
+    # print("country"+data)
+
+
+def Network_based(ID, df):
+    ID = ID
+
+    DNS_list = ["google.com", "youtube.com", "facebook.com", "baidu.com", "wikipedia.org",
+                "yahoo.com", "qq.com", "taobao.com", "tmall.com", "twitter.com", "netflix.com"]
+    ASN_list = ["16509", "203220", "32934", "15169", "11344"]
+    ####### Domain ######
+    domain_feature = str(df.domain[ID]).lower()
+    if domain_feature == "null":
+        domain_feature = "0"
+    else:
+        for i in DNS_list:
+            if i in domain_feature:
+                domain_feature = "1"
+            else:
+                domain_feature = "0"
+    # print(domain_feature)
+    ####### Country ######
+    country_feature = str(df.country[ID])
+    Feature_country(country_feature)
 
 
 def URL_whois(URL):
@@ -110,20 +144,20 @@ def Open_CSV(path):
     df = pd.read_csv(path, skipinitialspace=True)
     now_ID = 0
     for Page in df.Page:
-        now_ID = now_ID + 1
         if Page == 1:
             Add_Row(now_ID, 1, 1)
-            Open_txt(now_ID)
+            # Open_txt(now_ID)
+            Network_based(now_ID, df)
             # print("Page:" + str(now_ID))
         else:
             Add_Row(now_ID, 1, 0)
             # print("No Page:" + str(now_ID))
             # arr = "0"
+        now_ID = now_ID + 1
 
 
 if __name__ == '__main__':
-    # file_path = "C:/Users/Jane/Desktop/NTU/Scam/Data/" + \
-    #     str(sys.argv[1]) + ".csv"
-    # Open_CSV(file_path)
+    file_path = "C:/Users/Jane/Desktop/NTU/Scam/Data/" + \
+        str(sys.argv[1]) + ".csv"
+    Open_CSV(file_path)
     # Open_txt(6)
-    URL_whois("http://matinicepick.icu/rak/1/?n=KDg1NSkgNTc4LTA5Mzk=")
