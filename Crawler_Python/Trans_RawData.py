@@ -32,7 +32,7 @@ def Add_CSV(arr):
 
 
 def Feature_country(data):
-    country_list = []
+    country_list = []  # 'US,EU,TR,RU,TW,BR,RO,IN,IT,HU'
     if data == "null":
         data = "0"
     else:
@@ -46,8 +46,6 @@ def Feature_country(data):
 
 def Network_based(ID, df):
     ID = ID - 1
-    DNS_list = []
-    ASN_list = []
     ###### Domain ######
     domain_feature = str(df.domain[ID]).lower()
     for i in DNS_list:
@@ -87,39 +85,77 @@ def Network_based(ID, df):
 
 
 def URL_whois(ID, df):
-    URL = df.url
-    print(URL[ID])
+    ID = ID - 1
+    URL = str(df.url[ID])
     samename_domain = 0
     samename_email = 0
     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     now = datetime.datetime.strptime(now, "%Y-%m-%d %H:%M:%S")
-    whois_detals = whois.whois(URL)
-    update = datetime.datetime.strptime(
-        str(whois_detals['updated_date'][0]), "%Y-%m-%d %H:%M:%S")
-    creation = datetime.datetime.strptime(
-        str(whois_detals['creation_date']), "%Y-%m-%d %H:%M:%S")
-    expiration = datetime.datetime.strptime(
-        str(whois_detals['expiration_date'][0]), "%Y-%m-%d %H:%M:%S")
-    de_update = (now - update).total_seconds()
-    de_creation = (now - creation).total_seconds()
-    de_once_update = de_creation - de_update
-    de_expiration = (expiration - now).total_seconds()
-    count_DNS = len(whois_detals['name_servers'])
-    org = whois_detals['org'].lower().replace(
-        ",", "").replace(".", "").replace("inc", "").lstrip()
-    domain = whois_detals['domain_name']
-    email = whois_detals['emails']
+    try:
+        whois_detals = whois.whois(URL)
+        try:
+            update = datetime.datetime.strptime(
+                str(whois_detals['updated_date'][0]), "%Y-%m-%d %H:%M:%S")
+        except:
+            update = 0
+        try:
+            creation = datetime.datetime.strptime(
+                str(whois_detals['creation_date']), "%Y-%m-%d %H:%M:%S")
+        except:
+            creation = 0
+        try:
+            expiration = datetime.datetime.strptime(
+                str(whois_detals['expiration_date'][0]), "%Y-%m-%d %H:%M:%S")
+        except:
+            expiration = 0
+        if type(update) == type(now):
+            de_update = (now - update).total_seconds()
+        else:
+            de_update = 0
+        if type(creation) == type(now):
+            de_creation = (now - creation).total_seconds()
+        else:
+            de_creation = 0
+        if type(de_creation) == type(now):
+            de_once_update = de_creation - de_update
+        else:
+            de_once_update = 0
+        if type(expiration) == type(now):
+            de_expiration = (expiration - now).total_seconds()
+        else:
+            de_expiration = 0
+        try:
+            count_DNS = len(whois_detals['name_servers'])
+        except:
+            count_DNS = 0
+        try:
+            domain = whois_detals['domain_name']
+        except:
+            domain = 0
+        try:
+            email = whois_detals['emails']
+        except:
+            email = 0
+        if domain or email != 0:
+            try:
+                org = whois_detals['org'].lower().replace(
+                    ",", "").replace(".", "").replace("inc", "").lstrip()
+                for i in domain:
+                    if org in i.lower():
+                        samename_domain += 1
+                for i in email:
+                    if org in i.lower():
+                        samename_domain += 1
+            except:
+                org = 0
+    except:
+        samename_domain = 0
+        count_DNS = 0
+        de_creation = 0
+        de_update = 0
+        de_expiration = 0
+        de_once_update = 0
 
-    for i in domain:
-        if org in i.lower():
-            samename_domain += 1
-        else:
-            print("no_samename_domain")
-    for i in email:
-        if org in i.lower():
-            samename_domain += 1
-        else:
-            print("no_samename_email")
     First_list[14] = samename_domain
     First_list[15] = count_DNS
     First_list[16] = de_creation
