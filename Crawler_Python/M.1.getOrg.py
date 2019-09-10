@@ -58,11 +58,18 @@ def Curl_Page(ID, url):
         print("It's 200 ok")
         try:
             soup = BeautifulSoup(urlopen(url).read(), "html.parser")
-            page.append("1")
             return get_respense_path(ID, soup)
         except:
-            page.append("0")
+            Epath = "C:/Users/Jane/Desktop/NTU/Scam/Data/Malicious/txt_ERROR.txt"
+            with open(Epath, 'a', encoding='utf-8') as fE:
+                fE.write("#%s URL = %s\n" % (ID, url))
+                fE.close()
             print("It's 404")
+    else:
+        Epath = "C:/Users/Jane/Desktop/NTU/Scam/Data/Malicious/txt_ERROR.txt"
+        with open(Epath, 'a', encoding='utf-8') as fE:
+            fE.write("#%s URL = %s\n" % (ID, url))
+            fE.close()
 
 
 def get_respense_path(ID, soup):
@@ -91,6 +98,10 @@ def Page_text(ID, taarget_url):
         print("####### Saving  %d.txt #######" % ID)
     else:
         print("2:404")
+        Epath = "C:/Users/Jane/Desktop/NTU/Scam/Data/Malicious/txt_ERROR.txt"
+        with open(Epath, 'a', encoding='utf-8') as fE:
+            fE.write("#%s URL = %s\n" % (ID, url))
+            fE.close()
         #Saving_txt(ID, (str(r.status_code)))
 
 
@@ -171,7 +182,6 @@ def Add_null():
     domains_count .append("0")
     server_count .append("0")
     hashes_count .append("0")
-    page.append("0")
 
 
 def DF_Table(count_array, ID, Phone):
@@ -180,7 +190,7 @@ def DF_Table(count_array, ID, Phone):
     Phone_array.append(Phone)
     data_array = [ID_array[n], Phone_array[n], org_url[n], chk_uuid[n], scan_time[n], dom_url[n], domain[n], country[n], city[n], server[n], ip[n], asn[n],
                   asn_name[n], securePercentage[n], IPv6Percentage[n], uniqCountries[n], adBlocked[n],
-                  Page_size[n], IP_count[n], domains_count[n], server_count[n], hashes_count[n], requests_count[n], page[n]]
+                  Page_size[n], IP_count[n], domains_count[n], server_count[n], hashes_count[n], requests_count[n], "1"]
     df = pd.DataFrame(data=[data_array], index=None,
                       columns=None, dtype=None, copy=False)
     # df.loc[org_url, 'url'] = re.sub(r"[\n\t\s]*", "", org_url)
