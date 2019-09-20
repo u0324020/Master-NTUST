@@ -24,6 +24,8 @@ import itertools
 from sklearn.metrics import roc_auc_score
 import time
 from sklearn.svm import SVC
+from sklearn.feature_selection import f_classif
+from sklearn.preprocessing import StandardScaler
 
 
 def Smote_upsampling(train_X, train_y):
@@ -34,7 +36,7 @@ def Smote_upsampling(train_X, train_y):
     #     plt_2 = plt.scatter(train_X[10556:, i - 1], train_X[10556:, i], c='r',
     #                         marker='x', s=50, cmap=plt.cm.Spectral)
     #     plt.legend(handles=[plt_1, plt_2], loc='upper left')
-    #     plt.savefig('C:/Users/Jane/Desktop/NTU/Scam/Code/image/Befor_Smote_F' +
+    #     plt.savefig('C:/Users/Jane/Desktop/NTU/Scam/Code/image/2Befor_Smote_F' +
     #                 str(i) + '.png', dpi=150)
     # 顏色: m, c, r, b
     # 點: o, x, +, *, v
@@ -49,7 +51,7 @@ def Smote_upsampling(train_X, train_y):
     #     plt_2 = plt.scatter(X_smo[10556:, i - 1], X_smo[10556:, i], c='r',
     #                         marker='x', s=50, cmap=plt.cm.Spectral)
     #     plt.legend(handles=[plt_1, plt_2], loc='upper left')
-    #     plt.savefig('C:/Users/Jane/Desktop/NTU/Scam/Code/image/After_Smote_F' +
+    #     plt.savefig('C:/Users/Jane/Desktop/NTU/Scam/Code/image/2After_Smote_F' +
     #                 str(i) + '.png', dpi=150)
     return (X_smo, y_smo)
 
@@ -261,53 +263,7 @@ def Tree_10flod(X, y):
     plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
                           title='Normalized confusion matrix(Tree)')
     plt.savefig('Tree-1(381).png', dpi=150)
-    plt.show()
-
-
-def SVM_10flod(X, y):
-    class_names = ['Malicious', 'Scam']
-    start = time.time()
-    clf = SVC(C=1, cache_size=500)
-    y_pred = cross_val_predict(clf, X, y, cv=10)
-    scores = cross_val_score(clf, X, y, cv=10, scoring='accuracy')
-    print('標準差:', np.std(scores))
-    print('10次', scores)
-    print('平均', scores.mean())
-    end = time.time()
-    print('TIME:', end - start)
-    print('Accuracy:', accuracy_score(y, y_pred))
-    print('Precision:', precision_score(y, y_pred))
-    print('Recall:', recall_score(y, y_pred))
-    print('F1_score:', f1_score(y, y_pred))
-    print('AUC_score:', roc_auc_score(y, y_pred))
-    fpr, tpr, threshold = roc_curve(y, y_pred)
-    roc_auc = auc(fpr, tpr)
-    plt.figure()
-    lw = 2
-    plt.plot(fpr, tpr, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
-    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic example')
-    plt.legend(loc="lower right")
-    plt.show()
-    plt.savefig('Tree-ROC.png', dpi=150)
-    cnf_matrix = confusion_matrix(y, y_pred)
-    np.set_printoptions(precision=2)
-    # print(cnf_matrix)
-    # Plot non-normalized confusion matrix
-    plt.figure()
-    plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
-                          title='Confusion matrix(Tree), without normalization')
-    plt.savefig('Tree(381).png', dpi=150)
-    # Plot normalized confusion matrix
-    plt.figure()
-    plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-                          title='Normalized confusion matrix(Tree)')
-    plt.savefig('Tree-1(381).png', dpi=150)
+    # plt.colorbar()
     plt.show()
 
 
@@ -341,17 +297,45 @@ def plot_confusion_matrix(cm, classes,
     plt.tight_layout()
 
 
+def XGBoost_importance(X, y):
+    print(Counter(y))
+    model = XGBClassifier()
+    model.fit(X, y)
+    plot_importance(model)
+    pyplot.savefig('feature_importance_Xgboost(992).png', dpi=150)
+    pyplot.show()
+
+
+def ANOVA(X, y):
+    sc = StandardScaler()
+    Input_data_nosc = X
+    Input_data1 = y
+    Input_data = sc.fit(Input_data_nosc)
+
+    b = np.arange(1, Input_data.shape[1] + 1)
+
+    f_classif_, pval = f_classif(Input_data, Input_data1)
+    print(f_classif_)
+    print(Input_data.shape)
+    plt.bar(b, f_classif_)
+    plt.title('Anova_100', fontsize=18)
+    plt.savefig('Anova.png', dpi=150)
+    plt.show()
+
+
 if __name__ == '__main__':
     train = loadtxt(
-        "C:/Users/Jane/Desktop/NTU/Scam/Data/Smote.csv", delimiter=",")
+        "C:/Users/Jane/Desktop/NTU/Scam/Data/Test_0920.csv", delimiter=",")
     np.random.shuffle(train)
     train_X = train[:, 0:43]
     train_y = train[:, 43]
-    #Tree_10flod(train_X, train_y)
-    #Xgboost_10fold(train_X, train_y)
+    ANOVA(train_X, train_y)
+    #XGBoost_importance(train_X, train_y)
+    # Tree_10flod(train_X, train_y)
+    # Xgboost_10fold(train_X, train_y)
     # Smote
-    X, y = Smote_upsampling(train_X, train_y)
-    SVM_10flod(X, y)
+    # X, y = Smote_upsampling(train_X, train_y)
+    # XGBoost_importance(X, y)
     # Tree(X, y)
     # Xgboost(X, y)
     # Xgboost_10fold(X, y)
