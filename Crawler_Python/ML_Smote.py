@@ -560,16 +560,28 @@ def lightgbm(X, y):
     plt.show()
 
 
+def lightgbm_importance(X, y):
+    print(Counter(y))
+    gbm = lgb.LGBMRegressor(objective='regression',
+                            learning_rate=0.3, n_estimators=50, num_threads=8)
+    # Fit model
+    gbm.fit(X, y)
+    plt.figure(figsize=(12, 6))
+    lgb.plot_importance(gbm, max_num_features=10)
+    plt.title("Featurertances")
+    plt.show()
+
+
 if __name__ == '__main__':
     train = loadtxt(
-        "C:/Users/Jane/Desktop/NTU/Scam/Code/1202-Boosting.csv", delimiter=",")
+        "C:/Users/Jane/Desktop/NTU/Scam/Code/1206-importance.csv", delimiter=",")
     np.random.shuffle(train)
     train_X = train[:, 0:44]
     train_y = train[:, 44]
     #ANOVA(train_X, train_y)
     #XGBoost_importance(train_X, train_y)
     #Tree_10flod(train_X, train_y)
-    Xgboost_10fold(train_X, train_y)
+    #Xgboost_10fold(train_X, train_y)
     # Smote
     #X, y = Smote_upsampling(train_X, train_y)
     #Catboost(train_X, train_y)
@@ -580,4 +592,5 @@ if __name__ == '__main__':
     #lightgbm(train_X, train_y)
     #Xgboost_10fold(X, y)
     #Catboost_10fold(train_X, train_y)
-    #lightgbm_10fold(train_X, train_y)
+    lightgbm_10fold(train_X, train_y)
+    #lightgbm_importance(train_X, train_y)
