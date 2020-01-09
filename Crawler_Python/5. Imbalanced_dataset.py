@@ -4,7 +4,7 @@ Created on Sun Dec 19 17:13:04 2019
 
 @author: Jane
 
-做調參數跟baggaing的imbalance實驗
+做10Fold調參數跟baggaing的imbalance實驗
 
 """
 from imblearn.over_sampling import SMOTE
@@ -45,6 +45,7 @@ from sklearn.datasets import make_gaussian_quantiles
 from sklearn.ensemble import BaggingClassifier
 from sklearn import preprocessing
 from sklearn.ensemble import VotingClassifier
+from sklearn.externals import joblib
 
 
 def Smote_upsampling(train_X, train_y):
@@ -85,8 +86,7 @@ def Xgboost(X, y, Weight):
     print('Recall = TPR :', recall_score(y_test, predictions))
     print('F1_score:', f1_score(y_test, predictions))
     print('Based on the Weight,We Tuning the parameter to:', w)
-    print('F-Weight_score:', ((math.pow(w, 2) + 1) * (precision * recall)) /
-          ((math.pow(w, 2) * (precision + recall))))
+    print('F-Weight_score:', ((w + 1) * ((precision * recall) / (precision + recall))))
     print('AUC_score:', roc_auc_score(y_test, predictions))
 
 
@@ -118,8 +118,7 @@ def Tree(X, y, Weight):
     print('Recall = TPR:', recall)
     print('F1_score:', f1_score(y_test, predictions))
     print('Based on the Weight,We Tuning the parameter to:', w)
-    print('F-Weight_score:', ((math.pow(w, 2) + 1) * (precision * recall)) /
-          ((math.pow(w, 2) * (precision + recall))))
+    print('F-Weight_score:', ((w + 1) * ((precision * recall) / (precision + recall))))
     print('AUC_score:', roc_auc_score(y_test, predictions))
 
 
@@ -154,8 +153,7 @@ def SVM(X, y, Weight):
     print('Recall = TPR:', recall)
     print('F1_score:', f1_score(y_test, predictions))
     print('Based on the Weight,We Tuning the parameter to:', w)
-    print('F-Weight_score:', ((math.pow(w, 2) + 1) * (precision * recall)) /
-          ((math.pow(w, 2) * (precision + recall))))
+    print('F-Weight_score:', ((w + 1) * ((precision * recall) / (precision + recall))))
     print('AUC_score:', roc_auc_score(y_test, predictions))
 
 
@@ -175,6 +173,7 @@ def Lightgbm(X, y, Weight):
            "error", "logloss"], eval_set=eval_set, verbose=True)
     print(XG)
     y_pred = XG.predict(X_test)
+    print(XG.predict(X[0:1]))
     predictions = [round(value) for value in y_pred]
 
     accuracy = accuracy_score(y_test, predictions)
@@ -183,15 +182,15 @@ def Lightgbm(X, y, Weight):
     print('TIME:', end - start)
     print('Accuracy:', accuracy_score(y_test, predictions))
     precision = precision_score(y_test, predictions, average='micro')
-    recall = recall_score(y_test, predictions)
+    recall = recall_score(y_test, predictions, average='micro')
     w = 1 - (Weight * 0.0001)
-    print('Precision:', precision_score(y_test, predictions))
-    print('Recall = TPR :', recall_score(y_test, predictions))
-    print('F1_score:', f1_score(y_test, predictions))
+    print('Precision:', precision_score(y_test, predictions, average='micro'))
+    print('Recall = TPR :', recall_score(y_test, predictions, average='micro'))
+    print('F1_score:', f1_score(y_test, predictions, average='micro'))
     print('Based on the Weight,We Tuning the parameter to:', w)
-    print('F-Weight_score:', ((math.pow(w, 2) + 1) * (precision * recall)) /
-          ((math.pow(w, 2) * (precision + recall))))
+    print('F-Weight_score:', ((w + 1) * ((precision * recall) / (precision + recall))))
     print('AUC_score:', roc_auc_score(y_test, predictions))
+    return XG
 
 
 def Bagging(X, y, Weight):  # when model overfitting # 不推薦，不如RandomForest # https://zhuanlan.zhihu.com/p/26683576
@@ -217,8 +216,7 @@ def Bagging(X, y, Weight):  # when model overfitting # 不推薦，不如RandomF
     print('Recall = TPR:', recall)
     print('F1_score:', f1_score(y_test, predictions))
     print('Based on the Weight,We Tuning the parameter to:', w)
-    print('F-Weight_score:', ((math.pow(w, 2) + 1) * (precision * recall)) /
-          ((math.pow(w, 2) * (precision + recall))))
+    print('F-Weight_score:', ((w + 1) * ((precision * recall) / (precision + recall))))
     print('AUC_score:', roc_auc_score(y_test, predictions))
 
 
@@ -245,27 +243,110 @@ def Voting(X, y):
     print('Recall = TPR:', recall)
     print('F1_score:', f1_score(y_test, predictions))
     print('Based on the Weight,We Tuning the parameter to:', w)
-    print('F-Weight_score:', ((math.pow(w, 2) + 1) * (precision * recall)) /
-          ((math.pow(w, 2) * (precision + recall))))
+    print('F-Weight_score:', ((w + 1) * ((precision * recall) / (precision + recall))))
     print('AUC_score:', roc_auc_score(y_test, predictions))
+
+
+def Save_Model(model, path):
+    path = path
+    joblib.dump(model, path)
+    print("===========Saving Model===========")
+
+
+def Load_Model(X, y, path):
+    path = path
+    print("===========Load Model===========")
+    model = joblib.load(path)
+    print(model.predict(X[0:1]))
+
+
+def For_LightGBM(X, y, Weight):
+    # class_names = ['Malicious', 'Scam']
+    class_names = ['Malicious', 'Scam']
+    start = time.time()
+    seed = 21
+    test_size = 0.3
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=seed)
+    eval_set = [(X_train, y_train), (X_test, y_test)]
+    k_range = range(70, 100)
+    L_scores = []
+    for k in k_range:
+        weight = "{0: 1, 1: " + str(k) + "}"
+        print(type(weight))
+        XG = lgb.LGBMRegressor(boosting_type='gbdt', num_leaves=31, max_depth=-1, learning_rate=0.1, n_estimators=100, subsample_for_bin=200000, objective=None, class_weight=weight, min_split_gain=0.,
+                               min_child_weight=1e-3, min_child_samples=20, subsample=1., subsample_freq=0, colsample_bytree=1., reg_alpha=0., reg_lambda=0., random_state=None, n_jobs=-1, silent=True, importance_type='split')
+        XG.fit(X_train, y_train, eval_metric=[
+               "error", "logloss"], eval_set=eval_set, verbose=True)
+        y_pred = XG.predict(X_test)
+        predictions = [round(value) for value in y_pred]
+        accuracy = accuracy_score(y_test, predictions)
+        L_scores.append(accuracy.mean())
+        #scores = cross_val_score(XG, X, y, cv=10, scoring='accuracy')
+        # L_scores.append(scores.mean())
+    plt.plot(k_range, L_scores)
+    plt.xlabel('Value of Weight for LightGBM')
+    plt.ylabel('Cross Validated Accuracy')
+    plt.show()
+
+
+def For_Xgboost(X, y, Weight):
+    class_names = ['Malicious', 'Scam']
+    start = time.time()
+    seed = 21
+    test_size = 0.3
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=seed)
+    eval_set = [(X_train, y_train), (X_test, y_test)]
+    k_range = range(1, 100)
+    L_scores = []
+    for k in k_range:
+        print("=====================" + str(k) + "=====================")
+        weight = "{0: 1, 1: " + str(k) + "}"
+        print(type(weight))
+        XG = XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=100, silent=True, objective="binary:logistic", booster='gbtree', n_jobs=1, nthread=None, gamma=0, min_child_weight=1,
+                           max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1, reg_alpha=0, reg_lambda=1, scale_pos_weight=k, base_score=0.5, random_state=0, seed=None, missing=None)
+        # XG.fit(X_train, y_train, eval_metric=[
+        #        "error", "logloss"], eval_set=eval_set, verbose=True)
+        # y_pred = XG.predict(X_test)
+        # predictions = [round(value) for value in y_pred]
+        # accuracy = accuracy_score(y_test, predictions)
+        # loss
+        #loss = -cross_val_score(XG, X, y, cv=10, scoring='')
+        # acc
+        accuracy = cross_val_score(XG, X, y, cv=10, scoring='accuracy')
+        L_scores.append(accuracy.mean())
+
+        #scores = cross_val_score(XG, X, y, cv=10, scoring='accuracy')
+        # L_scores.append(scores.mean())
+    plt.plot(k_range, L_scores)
+    plt.xlabel('Value of Weight for XGBoost')
+    plt.ylabel('Cross Validated Accuracy')
+    plt.savefig('/image/10Fold_Weight_XGBoost.png')
+    plt.show()
 
 
 if __name__ == '__main__':
     train = loadtxt(
         "C:/Users/Jane/Desktop/NTU/Scam/Code/1219-Imbalanced-testing.csv", delimiter=",")
     min_max_scaler = preprocessing.MinMaxScaler()
-    np.random.shuffle(train)
+    # np.random.shuffle(train)
     train_X = train[:, 0:44]
     train_y = train[:, 44]
     train_X = min_max_scaler.fit_transform(train_X)  # normalize
     counter_y = Counter(train_y)
     Weight = round((counter_y[0.0]) / (counter_y[1.0]))  # int
     # SMOTE
-    train_X, train_y = Smote_upsampling(train_X, train_y)
+    #train_X, train_y = Smote_upsampling(train_X, train_y)
     #
-    Xgboost(train_X, train_y, Weight)
+    #For_LightGBM(train_X, train_y, Weight)
+    For_Xgboost(train_X, train_y, Weight)
+    #Xgboost(train_X, train_y, Weight)
     #Tree(train_X, train_y, Weight)
-    # Bagging(train_X, train_y, Weight)
-    Lightgbm(train_X, train_y, Weight)
-    SVM(train_X, train_y, Weight)
+    #Bagging(train_X, train_y, Weight)
+    #model = Lightgbm(train_X, train_y, Weight)
+    #path = "C:/Users/Jane/Desktop/NTU/Scam/Code/Model/LightGBM.pkl"
+    #Save_Model(model, path)
+    #Load_Model(train_X, train_y, path)
+    #SVM(train_X, train_y, Weight)
     #Voting(train_X, train_y)
