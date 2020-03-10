@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec 19 17:13:04 2019
+
+@author: Jane
+
+1. 所有基礎實驗
+2. SMOTE比較
+
+Note: SMOTE後的Pression算不出來
+##5833:2430
+"""
+from sklearn.externals import joblib
+import pandas as pd
 from imblearn.over_sampling import SMOTE
 from collections import Counter
 from numpy import loadtxt
@@ -28,34 +42,156 @@ from sklearn.feature_selection import f_classif
 from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostClassifier
 import lightgbm as lgb
+from sklearn import preprocessing
+from imblearn.combine import SMOTEENN
+from imblearn.combine import SMOTETomek
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.utils import class_weight
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import average_precision_score
 
 
 def Smote_upsampling(train_X, train_y):
+    print("------SMOTE------")
     print(Counter(train_y))
-    # for i in range(1, 43):
-    #     plt_1 = plt.scatter(train_X[:10556, i - 1], train_X[:10556, i], c='b',
-    #                         marker='o', s=40, cmap=plt.cm.Spectral)  # x,y 特徵
-    #     plt_2 = plt.scatter(train_X[10556:, i - 1], train_X[10556:, i], c='r',
-    #                         marker='x', s=50, cmap=plt.cm.Spectral)
-    #     plt.legend(handles=[plt_1, plt_2], loc='upper left')
-    #     plt.savefig('C:/Users/Jane/Desktop/NTU/Scam/Code/image/2Befor_Smote_F' +
-    #                 str(i) + '.png', dpi=150)
-    # 顏色: m, c, r, b
-    # 點: o, x, +, *, v
-    # 透明度 alpha(0~1)
-
+    Stime = time.time()
     smo = SMOTE(random_state=42)
     X_smo, y_smo = smo.fit_sample(train_X, train_y)
+    Etime = time.time()
     print(Counter(y_smo))
-    # for i in range(1, 43):
-    #     plt_1 = plt.scatter(X_smo[:10556, i - 1], X_smo[:10556, i], c='b',
-    #                         marker='o', s=40, cmap=plt.cm.Spectral)  # x,y 特徵
-    #     plt_2 = plt.scatter(X_smo[10556:, i - 1], X_smo[10556:, i], c='r',
-    #                         marker='x', s=50, cmap=plt.cm.Spectral)
-    #     plt.legend(handles=[plt_1, plt_2], loc='upper left')
-    #     plt.savefig('C:/Users/Jane/Desktop/NTU/Scam/Code/image/2After_Smote_F' +
-    #                 str(i) + '.png', dpi=150)
+    print('TIME:', Etime - Stime)
     return (X_smo, y_smo)
+
+
+def SMOTEENN_upsampling(train_X, train_y):
+    print("------SMOTEENN------")
+    print(Counter(train_y))
+    Stime = time.time()
+    smo = SMOTEENN(random_state=42)
+    X_smo, y_smo = smo.fit_resample(train_X, train_y)
+    Etime = time.time()
+    print(Counter(y_smo))
+    print('TIME:', Etime - Stime)
+    return (X_smo, y_smo)
+
+
+def SMOTETomek_upsampling(train_X, train_y):
+    print("------SMOTETomek------")
+    print(Counter(train_y))
+    Stime = time.time()
+    smo = SMOTETomek(random_state=42)
+    X_smo, y_smo = smo.fit_resample(train_X, train_y)
+    Etime = time.time()
+    print(Counter(y_smo))
+    print('TIME:', Etime - Stime)
+    return (X_smo, y_smo)
+
+# def Smote_upsampling(train_X, train_y):
+#     print(Counter(train_y))
+#     # for i in range(1, 43):
+#     #     plt_1 = plt.scatter(train_X[:10556, i - 1], train_X[:10556, i], c='b',
+#     #                         marker='o', s=40, cmap=plt.cm.Spectral)  # x,y 特徵
+#     #     plt_2 = plt.scatter(train_X[10556:, i - 1], train_X[10556:, i], c='r',
+#     #                         marker='x', s=50, cmap=plt.cm.Spectral)
+#     #     plt.legend(handles=[plt_1, plt_2], loc='upper left')
+#     #     plt.savefig('C:/Users/Jane/Desktop/NTU/Scam/Code/image/2Befor_Smote_F' +
+#     #                 str(i) + '.png', dpi=150)
+#     # 顏色: m, c, r, b
+#     # 點: o, x, +, *, v
+#     # 透明度 alpha(0~1)
+
+#     smo = SMOTE(random_state=42)
+#     X_smo, y_smo = smo.fit_sample(train_X, train_y)
+#     print(Counter(y_smo))
+#     # for i in range(1, 43):
+#     #     plt_1 = plt.scatter(X_smo[:10556, i - 1], X_smo[:10556, i], c='b',
+#     #                         marker='o', s=40, cmap=plt.cm.Spectral)  # x,y 特徵
+#     #     plt_2 = plt.scatter(X_smo[10556:, i - 1], X_smo[10556:, i], c='r',
+#     #                         marker='x', s=50, cmap=plt.cm.Spectral)
+#     #     plt.legend(handles=[plt_1, plt_2], loc='upper left')
+#     #     plt.savefig('C:/Users/Jane/Desktop/NTU/Scam/Code/image/2After_Smote_F' +
+#     #                 str(i) + '.png', dpi=150)
+#     return (X_smo, y_smo)
+def SVM(X, y):
+    class_names = ['Malicious', 'Scam']
+    start = time.time()
+    # seed = 7
+    # test_size = 0.33
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     X, y, test_size=test_size, random_state=seed)
+    gbm = SVC(C=1.0, kernel='linear', degree=3, gamma='auto_deprecated', coef0=0.0, shrinking=True, probability=False, tol=1e-3,
+             cache_size=200, class_weight='balanced', verbose=False, max_iter=-1, decision_function_shape='ovr', random_state=None)
+    y_pred = cross_val_predict(gbm, X, y, cv=10)
+    scores = cross_val_score(gbm, X, y, cv=10, scoring='accuracy')
+    print('標準差:', np.std(scores))
+    print('10次', scores)
+    print('平均', scores.mean())
+    end = time.time()
+    print('TIME:', end - start)
+    print('Accuracy:', accuracy_score(y, y_pred))
+    print('Precision:', precision_score(y, y_pred))
+    print('Recall:', recall_score(y, y_pred))
+    AP =average_precision_score(y, y_pred)
+    print('Average precision-recall score:',AP)
+    print('F1_score:', f1_score(y, y_pred))
+    print('AUC_score:', roc_auc_score(y, y_pred))
+
+    return gbm
+
+def RandomForest(X, y):
+    class_names = ['Malicious', 'Scam']
+    start = time.time()
+    # seed = 7
+    # test_size = 0.33
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     X, y, test_size=test_size, random_state=seed)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.5, random_state=7)
+    XG = RandomForestClassifier(n_estimators='warn', criterion="gini", max_depth=None, min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0., max_features="auto",
+                                max_leaf_nodes=None, min_impurity_decrease=0., min_impurity_split=None, bootstrap=True, oob_score=False, n_jobs=None, random_state=None, verbose=0, warm_start=False, class_weight=None)
+    XG.fit(X_train, y_train)
+    print(XG)
+    y_pred = XG.predict(X_test)
+    predictions = [round(value) for value in y_pred]
+
+    accuracy = accuracy_score(y_test, predictions)
+    print("Accuracy: %.2f%%" % (accuracy * 100.0))
+    end = time.time()
+    print('TIME:', end - start)
+    print('Accuracy:', accuracy_score(y_test, predictions))
+    print('Precision:', precision_score(y_test, predictions))
+    print('Recall:', recall_score(y_test, predictions))
+    print('F1_score:', f1_score(y_test, predictions))
+    print('AUC_score:', roc_auc_score(y_test, predictions))
+    # fpr, tpr, threshold = roc_curve(y_test, predictions)
+    # roc_auc = auc(fpr, tpr)
+    # plt.figure()
+    # lw = 2
+    # plt.plot(fpr, tpr, color='darkorange',
+    #          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
+    # plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.title('Receiver operating characteristic')
+    # plt.legend(loc="lower right")
+    # plt.show()
+    # plt.savefig('Xgboost-Only-ROC.png', dpi=150)
+    # cnf_matrix = confusion_matrix(y_test, predictions)
+    # np.set_printoptions(precision=2)
+    # # print(cnf_matrix)
+    # # Plot non-normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
+    #                       title='Confusion matrix(Xgboost), without normalization')
+    # plt.savefig('Xgboost-Only(381).png', dpi=150)
+    # # Plot normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+    #                       title='Normalized confusion matrix(Xgboost)')
+    # plt.savefig('Xgboost-Only-1(381).png', dpi=150)
+    # plt.show()
 
 
 def Xgboost(X, y):
@@ -150,36 +286,36 @@ def Xgboost_10fold(X, y):
     print('Recall:', recall_score(y, y_pred))
     print('F1_score:', f1_score(y, y_pred))
     print('AUC_score:', roc_auc_score(y, y_pred))
-    fpr, tpr, threshold = roc_curve(y, y_pred)
-    roc_auc = auc(fpr, tpr)
-    plt.figure()
-    lw = 2
-    plt.figure(figsize=(10, 10))
-    plt.plot(fpr, tpr, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
-    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic')
-    plt.legend(loc="lower right")
-    plt.show()
-    plt.savefig('Xgboost-ROC.png', dpi=150)
-    cnf_matrix = confusion_matrix(y, y_pred)
-    np.set_printoptions(precision=2)
-    # print(cnf_matrix)
-    # Plot non-normalized confusion matrix
-    plt.figure()
-    plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
-                          title='Confusion matrix(Xgboost), without normalization')
-    plt.savefig('Xgboost(381).png', dpi=150)
-    # Plot normalized confusion matrix
-    plt.figure()
-    plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-                          title='Normalized confusion matrix(Xgboost)')
-    plt.savefig('Xgboost-1(381).png', dpi=150)
-    plt.show()
+    # fpr, tpr, threshold = roc_curve(y, y_pred)
+    # roc_auc = auc(fpr, tpr)
+    # plt.figure()
+    # lw = 2
+    # plt.figure(figsize=(10, 10))
+    # plt.plot(fpr, tpr, color='darkorange',
+    #          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
+    # plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.title('Receiver operating characteristic')
+    # plt.legend(loc="lower right")
+    # plt.show()
+    # plt.savefig('Xgboost-ROC.png', dpi=150)
+    # cnf_matrix = confusion_matrix(y, y_pred)
+    # np.set_printoptions(precision=2)
+    # # print(cnf_matrix)
+    # # Plot non-normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
+    #                       title='Confusion matrix(Xgboost), without normalization')
+    # plt.savefig('Xgboost(381).png', dpi=150)
+    # # Plot normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+    #                       title='Normalized confusion matrix(Xgboost)')
+    # plt.savefig('Xgboost-1(381).png', dpi=150)
+    # plt.show()
 
 
 def Tree(X, y):
@@ -190,7 +326,7 @@ def Tree(X, y):
     # X_train, X_test, y_train, y_test = train_test_split(
     #     X, y, test_size=test_size, random_state=seed)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, Y, test_size=0.5, random_state=7)
+        X, y, test_size=0.5, random_state=7)
     XG = DecisionTreeClassifier(criterion='gini', max_depth=10)
     XG.fit(X_train, y_train)
     print(XG)
@@ -240,7 +376,8 @@ def Tree(X, y):
 def Tree_10flod(X, y):
     class_names = ['Malicious', 'Scam']
     start = time.time()
-    clf = DecisionTreeClassifier(criterion='entropy', max_depth=10)
+    clf = RandomForestClassifier(n_estimators='warn', criterion="gini", max_depth=None, min_samples_split=2, min_samples_leaf=1, min_weight_fraction_leaf=0., max_features="auto",
+                                 max_leaf_nodes=None, min_impurity_decrease=0., min_impurity_split=None, bootstrap=True, oob_score=False, n_jobs=None, random_state=None, verbose=0, warm_start=False, class_weight=None)
     y_pred = cross_val_predict(clf, X, y, cv=10)
     scores = cross_val_score(clf, X, y, cv=10, scoring='accuracy')
     print('標準差:', np.std(scores))
@@ -253,37 +390,37 @@ def Tree_10flod(X, y):
     print('Recall:', recall_score(y, y_pred))
     print('F1_score:', f1_score(y, y_pred))
     print('AUC_score:', roc_auc_score(y, y_pred))
-    fpr, tpr, threshold = roc_curve(y, y_pred)
-    roc_auc = auc(fpr, tpr)
-    plt.figure()
-    lw = 2
-    plt.figure(figsize=(10, 10))
-    plt.plot(fpr, tpr, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
-    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic')
-    plt.legend(loc="lower right")
-    plt.show()
-    plt.savefig('Tree-ROC.png', dpi=150)
-    cnf_matrix = confusion_matrix(y, y_pred)
-    np.set_printoptions(precision=2)
-    # print(cnf_matrix)
-    # Plot non-normalized confusion matrix
-    plt.figure()
-    plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
-                          title='Confusion matrix(Tree), without normalization')
-    plt.savefig('Tree(381).png', dpi=150)
-    # Plot normalized confusion matrix
-    plt.figure()
-    plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-                          title='Normalized confusion matrix(Tree)')
-    plt.savefig('Tree-1(381).png', dpi=150)
-    # plt.colorbar()
-    plt.show()
+    # fpr, tpr, threshold = roc_curve(y, y_pred)
+    # roc_auc = auc(fpr, tpr)
+    # plt.figure()
+    # lw = 2
+    # plt.figure(figsize=(10, 10))
+    # plt.plot(fpr, tpr, color='darkorange',
+    #          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
+    # plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.title('Receiver operating characteristic')
+    # plt.legend(loc="lower right")
+    # plt.show()
+    # plt.savefig('Tree-ROC.png', dpi=150)
+    # cnf_matrix = confusion_matrix(y, y_pred)
+    # np.set_printoptions(precision=2)
+    # # print(cnf_matrix)
+    # # Plot non-normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
+    #                       title='Confusion matrix(Tree), without normalization')
+    # plt.savefig('Tree(381).png', dpi=150)
+    # # Plot normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+    #                       title='Normalized confusion matrix(Tree)')
+    # plt.savefig('Tree-1(381).png', dpi=150)
+    # # plt.colorbar()
+    # plt.show()
 
 
 def plot_confusion_matrix(cm, classes,
@@ -320,8 +457,8 @@ def XGBoost_importance(X, y):
     print(Counter(y))
     model = XGBClassifier()
     model.fit(X, y)
-    plot_importance(model)
-    pyplot.savefig('feature_importance_Xgboost(992).png', dpi=150)
+    plot_importance(model, max_num_features=10)
+    #pyplot.savefig('feature_importance_Xgboost(992).png', dpi=150)
     pyplot.show()
 
 
@@ -454,6 +591,7 @@ def Catboost(X, y):
 
 
 def lightgbm_10fold(X, y):
+    print("-------Lightgbm_10fold---------")
     class_names = ['Malicious', 'Scam']
     start = time.time()
     gbm = lgb.LGBMClassifier(boosting_type='gbdt', num_leaves=31, max_depth=-1, learning_rate=0.3, n_estimators=100, subsample_for_bin=200000, objective=None, class_weight=None, min_split_gain=0.,
@@ -502,14 +640,24 @@ def lightgbm_10fold(X, y):
     plt.show()
 
 
-def lightgbm(X, y):
+def lightgbm(X_train, y_train):
+    # Test_scams.csv
+    train = loadtxt(
+        "C:/Users/Jane/Desktop/NTU/Scam/Code/Test_scams.csv", delimiter=",")
+    np.random.shuffle(train)
+    min_max_scaler = preprocessing.MinMaxScaler()
+    X_test = train[:, 0:44]
+    y_test = train[:, 44]
+    X_test = min_max_scaler.fit_transform(X_test)
+
+    print("-------Lightgbm---------")
     class_names = ['Malicious', 'Scam']
     start = time.time()
-    seed = 7
-    test_size = 0.5
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=seed)
-    eval_set = [(X_train, y_train), (X_test, y_test)]
+    # seed = 7
+    # test_size = 0.3
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     X, y, test_size=test_size, random_state=seed)
+    # eval_set = [(X_train, y_train), (X_test, y_test)]
 
     # Initialize CatBoostClassifier
     gbm = lgb.LGBMRegressor(objective='regression',
@@ -529,10 +677,230 @@ def lightgbm(X, y):
     print('Recall:', recall_score(y_test, predictions))
     print('F1_score:', f1_score(y_test, predictions))
     print('AUC_score:', roc_auc_score(y_test, predictions))
+    # fpr, tpr, threshold = roc_curve(y_test, predictions)
+    # roc_auc = auc(fpr, tpr)
+    # plt.figure()
+    # # plt.style.use('ggplot')
+    # lw = 2
+    # plt.plot(fpr, tpr, color='darkorange',
+    #          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
+    # plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.title('Receiver operating characteristic')
+    # plt.legend(loc="lower right")
+    # plt.show()
+    # plt.savefig('Catboost-Only-ROC.png', dpi=150)
+    # cnf_matrix = confusion_matrix(y_test, predictions)
+    # np.set_printoptions(precision=2)
+    # # print(cnf_matrix)
+    # # Plot non-normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
+    #                       title='Confusion matrix(Catboost), without normalization')
+    # plt.savefig('Catboost-Only(381).png', dpi=150)
+    # # Plot normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+    #                       title='Normalized confusion matrix(Catboost)')
+    # plt.savefig('Catboost-Only-1(381).png', dpi=150)
+    # plt.show()
+
+
+def lightgbm_importance(X, y):
+    print(Counter(y))
+    gbm = lgb.LGBMClassifier(objective= 'binary',learning_rate=0.1,scale_pos_weight=55)
+    #gbm = lgb.LGBMRegressor(objective='regression',
+    #                        learning_rate=0.3, n_estimators=50, num_threads=8)
+    # Fit model
+    gbm.fit(X, y)
+    plt.figure(figsize=(12, 6))
+    lgb.plot_importance(gbm, max_num_features=10)
+    plt.title("Featurertances")
+    plt.show()
+
+
+def AdaBoost(X, y):  # 模型太弱就用boost
+    class_names = ['Malicious', 'Scam']
+    start = time.time()
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=21)
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=2, min_samples_split=20,
+                                                    min_samples_leaf=5), algorithm="SAMME", n_estimators=200, learning_rate=0.8)
+    bdt.fit(X_train, y_train)
+    y_pred = bdt.predict(X_test)
+    predictions = [round(value) for value in y_pred]
+
+    accuracy = accuracy_score(y_test, predictions)
+    print("Accuracy: %.2f%%" % (accuracy * 100.0))
+    end = time.time()
+    print('TIME:', end - start)
+    print('Accuracy:', accuracy_score(y_test, predictions))
+    precision = precision_score(y_test, predictions)
+    recall = recall_score(y_test, predictions)
+    print('Precision:', precision)
+    print('Recall = TPR:', recall)
+    print('F1_score:', f1_score(y_test, predictions))
+    print('AUC_score:', roc_auc_score(y_test, predictions))
+
+
+def Weight_LightGBM(X, y, W):
+    seed = 21
+    test_size = 0.3
+    X_train, X_test, y_train, y_test = train_test_split(
+        train_X, train_y, test_size=test_size, random_state=seed)
+    eval_set = [(X_train, y_train), (X_test, y_test)]
+
+    print("=======Org=======")
+    gbm1 = lgb.LGBMClassifier(boosting_type='gbdt', num_leaves=31, max_depth=-1, learning_rate=0.1, n_estimators=100, subsample_for_bin=200000, objective='binary', class_weight=None, min_split_gain=0.,
+                              min_child_weight=1e-3, min_child_samples=20, subsample=1., subsample_freq=0, colsample_bytree=1., reg_alpha=0., reg_lambda=0., random_state=None, n_jobs=-1, silent=True, importance_type='split')
+    # Fit model
+
+    gbm1.fit(X_train, y_train)
+    print(gbm1)
+    start = time.time()
+    y_pred = gbm1.predict(X_test)
+    predictions = [round(value) for value in y_pred]
+    end = time.time()
+    accuracy = accuracy_score(y_test, predictions)
+    print("Accuracy: %.2f%%" % (accuracy * 100.0))
+    print('TIME:', end - start)
+    print('Accuracy:', accuracy_score(y_test, predictions))
+    print('Precision:', precision_score(y_test, predictions))
+    print('Recall:', recall_score(y_test, predictions))
+    print('Average precision-recall score:',
+          average_precision_score(y_test, predictions))
+    print('F1_score:', f1_score(y_test, predictions))
+    print('AUC_score:', roc_auc_score(y_test, predictions))
+    precision, recall, thresholds = precision_recall_curve(y_test, predictions)
+    plt.figure("P-R Curve")
+    plt.title('Precision/Recall Curve')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.plot(recall, precision)
+    plt.show()
+
+    print("=======ClassWeight=======")
+    print(W)
+    gbm = lgb.LGBMClassifier(boosting_type='gbdt', num_leaves=31, max_depth=-1, learning_rate=0.1, n_estimators=100, subsample_for_bin=200000, objective='binary', class_weight=None, min_split_gain=0., min_child_weight=1e-3,
+                             min_child_samples=20, subsample=1., subsample_freq=0, colsample_bytree=1., reg_alpha=0., reg_lambda=0., random_state=None, n_jobs=-1, silent=True, importance_type='split', scale_pos_weight=W)
+    # Fit model
+    gbm.fit(X_train, y_train, eval_set=eval_set)
+    start = time.time()
+    y_pred = gbm.predict(X_test)
+    predictions = [round(value) for value in y_pred]
+    end = time.time()
+    accuracy = accuracy_score(y_test, predictions)
+    print("Accuracy: %.2f%%" % (accuracy * 100.0))
+    print('TIME:', end - start)
+    print('Accuracy:', accuracy_score(y_test, predictions))
+    print('Precision:', precision_score(y_test, predictions))
+    print('Recall:', recall_score(y_test, predictions))
+    print('Average precision-recall score:',
+          average_precision_score(y_test, predictions))
+    print('F1_score:', f1_score(y_test, predictions))
+    print('AUC_score:', roc_auc_score(y_test, predictions))
+    precision, recall, thresholds = precision_recall_curve(y_test, predictions)
+    plt.figure("P-R Curve")
+    plt.title('Precision/Recall Curve')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.plot(recall, precision)
+    plt.show()
+
+
+def Weight_lightgbm_10fold(X, y, W):
+    print("-------Lightgbm_10fold(RF_0.01)---------")
+    class_names = ['Malicious','Scam']
+    start = time.time()
+    gbm = lgb.LGBMClassifier(boosting='gbdt',bagging_fraction = 0.8,bagging_freq=5, num_leaves=300, max_depth=10, learning_rate=0.01, n_estimators=100, subsample_for_bin=200000, objective='binary', class_weight=None, min_split_gain=0., min_child_weight=1e-3,
+                             min_child_samples=20,verbose=-1,min_data_in_leaf=20, subsample=1., subsample_freq=0, colsample_bytree=1., reg_alpha=0., reg_lambda=0., random_state=None, n_jobs=-1, silent=True, importance_type='split', scale_pos_weight=W)
+    y_pred = cross_val_predict(gbm, X, y, cv=10)
+    scores = cross_val_score(gbm, X, y, cv=10, scoring='accuracy')
+    print('標準差:', np.std(scores))
+    print('10次', scores)
+    print('平均', scores.mean())
+    end = time.time()
+    print('TIME:', end - start)
+    print('Accuracy:', accuracy_score(y, y_pred))
+    print('Precision:', precision_score(y, y_pred))
+    print('Recall:', recall_score(y, y_pred))
+    AP =average_precision_score(y, y_pred)
+    print('Average precision-recall score:',AP)
+    print('F1_score:', f1_score(y, y_pred))
+    print('AUC_score:', roc_auc_score(y, y_pred))
+    #=====plot===
+    # fpr, tpr, threshold = roc_curve(y, y_pred)
+    # roc_auc = auc(fpr, tpr)
+    # plt.figure()
+    # lw = 2
+    # plt.figure(figsize=(10, 10))
+    # plt.plot(fpr, tpr, color='darkorange',
+    #          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
+    # plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.title('Receiver operating characteristic')
+    # plt.legend(loc="lower right")
+    # plt.show()
+    # cnf_matrix = confusion_matrix(y, y_pred)
+    # np.set_printoptions(precision=2)
+    # # print(cnf_matrix)
+    # # Plot non-normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
+    #                       title='Confusion matrix(LightGBM(gbdt)_10Fold)')
+    # # Plot normalized confusion matrix
+    # plt.figure()
+    # plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
+    #                       title='Normalized confusion matrix(LightGBM(gbdt)_10Fold)')
+    # # plt.savefig('Xgboost-1(381).png', dpi=150)
+    # plt.show()
+    # # PR curve
+    # precision, recall, thresholds = precision_recall_curve(y, y_pred)
+    # plt.figure("P-R Curve")
+    # plt.plot(recall, precision, color='red', linewidth=1.0,
+    #          linestyle='--', label='P-R Curve (AP = %0.2f)' % AP)
+    # plt.title('Precision/Recall Curve')
+    # plt.legend(loc="lower right")
+    # plt.xlabel('Recall')
+    # plt.ylabel('Precision')
+    # plt.show()
+
+    return gbm
+
+def Test_light_rf(clf,X_test,y_test,X_train, y_train):
+    class_names = ['Malicious','Scam']
+    print("Test....")
+    XG = clf
+    XG.fit(X_train, y_train)
+    start = time.time()
+    y_pred = XG.predict(X_test)
+    print(XG.predict(X_train[0:1]))
+    predictions = [round(value) for value in y_pred]
+
+    accuracy = accuracy_score(y_test, predictions)
+    print("Accuracy: %.2f%%" % (accuracy * 100.0))
+    end = time.time()
+    print('TIME:', end - start)
+    print('Accuracy:', accuracy_score(y_test, predictions))
+    precision = precision_score(y_test, predictions, average='micro')
+    recall = recall_score(y_test, predictions, average='micro')
+    AP =average_precision_score(y_test, predictions, average='micro')
+    print('Precision:', precision)
+    print('Recall = TPR :', recall)
+    print('F1_score:', f1_score(y_test, predictions, average='micro'))
+    print('AUC_score:', roc_auc_score(y_test, predictions))
+    #=========PLOT==========
     fpr, tpr, threshold = roc_curve(y_test, predictions)
     roc_auc = auc(fpr, tpr)
     plt.figure()
     lw = 2
+    plt.figure(figsize=(10, 10))
     plt.plot(fpr, tpr, color='darkorange',
              lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
@@ -543,54 +911,106 @@ def lightgbm(X, y):
     plt.title('Receiver operating characteristic')
     plt.legend(loc="lower right")
     plt.show()
-    plt.savefig('Catboost-Only-ROC.png', dpi=150)
     cnf_matrix = confusion_matrix(y_test, predictions)
     np.set_printoptions(precision=2)
     # print(cnf_matrix)
     # Plot non-normalized confusion matrix
     plt.figure()
     plot_confusion_matrix(cnf_matrix, classes=class_names, cmap=plt.cm.Oranges,
-                          title='Confusion matrix(Catboost), without normalization')
-    plt.savefig('Catboost-Only(381).png', dpi=150)
+                          title='Confusion matrix(LightGBM(gbdt)_10Fold)')
     # Plot normalized confusion matrix
     plt.figure()
     plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-                          title='Normalized confusion matrix(Catboost)')
-    plt.savefig('Catboost-Only-1(381).png', dpi=150)
+                          title='Normalized confusion matrix(LightGBM(gbdt)_10Fold)')
+    # plt.savefig('Xgboost-1(381).png', dpi=150)
     plt.show()
-
-
-def lightgbm_importance(X, y):
-    print(Counter(y))
-    gbm = lgb.LGBMRegressor(objective='regression',
-                            learning_rate=0.3, n_estimators=50, num_threads=8)
-    # Fit model
-    gbm.fit(X, y)
-    plt.figure(figsize=(12, 6))
-    lgb.plot_importance(gbm, max_num_features=10)
-    plt.title("Featurertances")
+    # PR curve
+    precision, recall, thresholds = precision_recall_curve(y_test, predictions)
+    plt.figure("P-R Curve")
+    plt.plot(recall, precision, color='red', linewidth=1.0,
+             linestyle='--', label='P-R Curve (AP = %0.2f)' % AP)
+    plt.title('Precision/Recall Curve')
+    plt.legend(loc="lower right")
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
     plt.show()
-
 
 if __name__ == '__main__':
-    train = loadtxt(
-        "C:/Users/Jane/Desktop/NTU/Scam/Code/1206-importance.csv", delimiter=",")
+    # train = loadtxt(
+    #    "C:/Users/Jane/Desktop/NTU/Scam/Code/0126_Balanced_with_Benign.csv", delimiter=",")
+    #===========Shuffle Training Data=============
+    # train_Scam = loadtxt(
+    #     "C:/Users/Jane/Desktop/NTU/Scam/Code/0224_Imbalanced_S2500.csv", delimiter=",")
+    # train_Malicious = loadtxt(
+    #     "C:/Users/Jane/Desktop/NTU/Scam/Code/0224_Imbalanced_M10.csv", delimiter=",")
+    # np.random.shuffle(train_Scam)
+    # np.random.shuffle(train_Malicious)
+    # shuffle_train_Malicious = train_Malicious[:5833,:]
+    # np.savetxt('shuffle_train_Malicious_'+str(time.time())+'.csv',shuffle_train_Malicious, delimiter=',')
+    # print('save shuffle Malicious csv...')
+    # shuffle_train_Scams = train_Scam[:2430,:]
+    # print('save shuffle Scams csv...')
+    # np.savetxt('shuffle_train_Scams_'+str(time.time())+'.csv',shuffle_train_Scams, delimiter=',')
+    # =========Certain Training Dataset========
+    shuffle_train_Malicious = loadtxt(
+        "C:/Users/Jane/Desktop/NTU/Scam/Code/shuffle_train_Malicious_0.97.csv", delimiter=",")
+    shuffle_train_Scams = loadtxt(
+        "C:/Users/Jane/Desktop/NTU/Scam/Code/shuffle_train_Scams_0.97.csv", delimiter=",")
+    #=====merge csv to train=====
+    #train = shuffle_train_Malicious + shuffle_train_Scams
+    train = np.concatenate((shuffle_train_Malicious, shuffle_train_Scams))
     np.random.shuffle(train)
     train_X = train[:, 0:44]
     train_y = train[:, 44]
+    # Normalization
+    min_max_scaler = preprocessing.MinMaxScaler()
+    train_X = min_max_scaler.fit_transform(train_X)  # normalize
+    counter_y = Counter(train_y)
+    Weight = round((counter_y[0.0]) / (counter_y[1.0]))  # int
+    #Weight = None
+    test = loadtxt(
+        "C:/Users/Jane/Desktop/NTU/Scam/Code/0225_testing_balanced.csv", delimiter=",")
+    np.random.shuffle(test)
+    min_max_scaler = preprocessing.MinMaxScaler()
+    test_X = test[:, 0:44]
+    test_y = test[:, 44]
+    test_X = min_max_scaler.fit_transform(test_X)  # normalize
+    # Weight_lightgbm_10fold(train_X, train_y, Weight)
+    #lightgbm_importance(train_X, train_y)
     #ANOVA(train_X, train_y)
+    #model = SVM(train_X, train_y)
     #XGBoost_importance(train_X, train_y)
-    #Tree_10flod(train_X, train_y)
+    # Random
+    #Weight_LightGBM(train_X, train_y, Weight)
     #Xgboost_10fold(train_X, train_y)
     # Smote
-    #X, y = Smote_upsampling(train_X, train_y)
+    # X, y = Smote_upsampling(train_X, train_y)
+    gbm = Weight_lightgbm_10fold(train_X, train_y, Weight)
+    joblib.dump(gbm, 'save_model/Lightgbm_10fold_Weight_gbdt.pkl')
+    print("save model...")
+    gbm2 = joblib.load('save_model/Lightgbm_10fold_Weight_gbdt.pkl')
+    Test_light_rf(gbm2, test_X, test_y,train_X, train_y)
+    print(Weight)
+    #X1, y1 = SMOTEENN_upsampling(train_X, train_y)
+    #X2, y2 = SMOTETomek_upsampling(train_X, train_y)
     #Catboost(train_X, train_y)
     #XGBoost_importance(train_X, train_y)
     #Tree(train_X, train_y)
     #Tree_10flod(X, y)
-    #Xgboost(train_X, train_y)
+    #
     #lightgbm(train_X, train_y)
-    #Xgboost_10fold(X, y)
-    #Catboost_10fold(train_X, train_y)
-    lightgbm_10fold(train_X, train_y)
+    # lightgbm(X1, y1)
+    # lightgbm(X2, y2)
+    # print("---RandomForest----")
+    # RandomForest(train_X, train_y)
+    # print("---Xgboost----")
+    # Xgboost(train_X, train_y)
+    #lightgbm(train_X, train_y)
+    # print("---Tree_10flod----")
+    # Tree_10flod(train_X, train_y)
+    # print("---Xgboost_10fold----")
+    # Xgboost_10fold(train_X, train_y)
+    # lightgbm_10fold(train_X, train_y)
+
     #lightgbm_importance(train_X, train_y)
+    #Catboost_10fold(train_X, train_y)
