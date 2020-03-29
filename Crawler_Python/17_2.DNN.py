@@ -35,6 +35,7 @@ from keras import backend as K
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
+from keras import optimizers
 
 
 def plot_confusion_matrix(cm, classes,
@@ -89,58 +90,92 @@ def f1_m(y_true, y_pred):
 
 def DNN_model(X, y, class_weights):
     model = Sequential(layers=None, name=None)
-    model.add(Dense(64, input_dim=44,
+    stateful = True
+    #============self=============#sgd一層128 LR:0.0001的效果最好
+    # model.add(Dense(128, input_dim=42,
+    #                 kernel_initializer='normal', activation='relu'))
+    # #model.add(Dense(256, activation='relu'))
+    # #model.add(Dropout(0.3, noise_shape=None, seed=21))
+    # #model.add(Dense(128, activation='relu'))
+    # model.add(Dense(1, activation='sigmoid'))
+    # #==========paper=============
+    model.add(Dense(42, input_dim=42,
                     kernel_initializer='normal', activation='relu'))
-    model.add(Dense(256, activation='relu'))
-    model.add(Dropout(0.3, noise_shape=None, seed=21))
-    model.add(Dense(256, activation='relu'))
-    model.add(Dense(20, activation='relu'))
+    model.add(Dense(9, activation='relu'))
+    model.add(Dense(14, activation='relu'))
+    # model.add(Dropout(0.3, noise_shape=None, seed=21))
+    model.add(Dense(9, activation='relu'))
+    model.add(Dense(5, activation='relu'))
     model.add(Dense(1, activation='sigmoid'))
     model.summary()
-
-    adam = Adam(lr=0.01, beta_1=0.9, beta_2=0.999,
+    sgd = optimizers.SGD(lr=0.00001, decay=1e-6, momentum=0.9, nesterov=True)
+    adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999,
                 epsilon=None, decay=0., amsgrad=False)
     model.compile(optimizer=adam, loss='binary_crossentropy',
                   metrics=['accuracy'])
-
+    # 8263 = epochs*batch_size
+    # 64-130 94
+    # 32-259 92 #
+    # 16-517 95
+    # 8-1033 88
     train_his = model.fit(
-        X, y, epochs=258, validation_split=0.3, batch_size=32, shuffle=True, verbose=1, class_weight={0: 1, 1: 2.4})  # class_weight='auto',{0: 1, 1: 100} # epochs = training sample/batch_size
+        X, y, epochs=45, validation_split=0.3, batch_size=184, shuffle=True, verbose=1, class_weight='auto')  # class_weight='auto',{0: 1, 1: 100} # epochs = training sample/batch_size
+    print(train_his.history.keys())
+    # #summarize history for accuracy
+    plt.plot(train_his.history['acc'])
+    plt.plot(train_his.history['val_acc'])
+    plt.title('Model Accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+    # summarize history for loss
+    plt.plot(train_his.history['loss'])
+    plt.plot(train_his.history['val_loss'])
+    plt.title('Model Loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
     return (model, train_his)
     # 8263
 
 
 if __name__ == '__main__':
+    #===========================split data================================
     shuffle_train_Malicious = loadtxt(
-        "C:/Users/Jane/Desktop/NTU/Scam/Code/shuffle_train_Malicious_0.97.csv", delimiter=",")
+        "C:/Users/Jane/Desktop/NTU/Scam/Code/shuffle_train_Malicious_0.97 - 42.csv", delimiter=",")
     shuffle_train_Scams = loadtxt(
-        "C:/Users/Jane/Desktop/NTU/Scam/Code/shuffle_train_Scams_0.97.csv", delimiter=",")
+        "C:/Users/Jane/Desktop/NTU/Scam/Code/shuffle_train_Scams_0.97 - 42.csv", delimiter=",")
     #=====merge csv to train=====
-    #train = shuffle_train_Malicious + shuffle_train_Scams
+    # train = shuffle_train_Malicious + shuffle_train_Scams
     train = np.concatenate((shuffle_train_Malicious, shuffle_train_Scams))
+    #============================================================
     # train = loadtxt(
-    #     "C:/Users/Jane/Desktop/NTU/108@Super/Code/1.4w(28040).csv", delimiter=",")
+    #     "C:/Users/Jane/Desktop/NTU/Scam/Code/0319_imbalance_10w,0.25.csv", delimiter = ",")
     np.random.shuffle(train)
-    X = train[:, 0:44]  # 1:2500
-    y = train[:, 44]
-    min_max_scaler = preprocessing.MinMaxScaler()
-    X = min_max_scaler.fit_transform(X)
+    X = train[:, 0:42]  # 1:2500
+    y = train[:, 42]
+    #min_max_scaler = preprocessing.MinMaxScaler()
+    #X = min_max_scaler.fit_transform(X)
     # testing data
     test = loadtxt(
-        "C:/Users/Jane/Desktop/NTU/Scam/Code/0225_testing_balanced.csv", delimiter=",")
+        "C:/Users/Jane/Desktop/NTU/Scam/Code/0225_testing_balanced - 42.csv", delimiter=",")
     # np.random.shuffle(train)
-    testX = test[:, 0:44]  # 1:2500
-    y_test_data = test[:, 44]
+    testX = test[:, 0:42]  # 1:2500
+    y_test_data = test[:, 42]
     class_names = ['Malicious', 'Scam']
-    # # Reshape and normalize training data
-    # trainX = X[:, :].reshape(
-    #     X.shape[0], 44, 1, 1).astype('float32')
-    # X_train = trainX
-    # y_train = np_utils.to_categorical(y)
-    # # Reshape and normalize test data
-    # testX = testX[:, :].reshape(testX.shape[0], 44, 1, 1).astype('float32')
-    # X_test = testX
-    # y_test = y_test_data
-    # y_test = np_utils.to_categorical(y_test)  # num_classes label約有幾個
+    # Reshape and normalize training data
+    trainX = X[:, :].reshape(
+        X.shape[0], 42).astype('float32')
+    X_train = trainX
+    y_train = np_utils.to_categorical(y)
+    # Reshape and normalize test data
+    testX = testX[:, :].reshape(testX.shape[0], 42).astype('float32')
+    X_test = testX
+    y_test = y_test_data
+    y_test = np_utils.to_categorical(y_test)  # num_classes label約有幾個
     # calculate the class weight
     #=================train=====================
     class_weights = class_weight.compute_class_weight(
@@ -157,9 +192,9 @@ if __name__ == '__main__':
     # print('F1-Score= ', f1_score)
     # print('Precision=', precision)
     # print('Recall=', recall)
-    model.save('DNN_model.h5')
+    model.save('DNN_model_sgd.h5')
     print("=========Test===========")
-    test_model = tf.contrib.keras.models.load_model('DNN_model.h5')
+    test_model = tf.contrib.keras.models.load_model('DNN_model_sgd.h5')
     scores2 = test_model.evaluate(X, y)
     print("")
     print('LOSS= ', scores2[0])
@@ -183,39 +218,42 @@ if __name__ == '__main__':
     print('AUC_score:', roc_auc_score(y_test_data, y_pred_binarized))
     cm = confusion_matrix(y_test_data, y_pred_binarized)
     print(cm)
-    plt.figure()
-    plot_confusion_matrix(cm, classes=class_names, normalize=True,
-                          title='Normalized confusion matrix(DNN)')
-    plt.show()
-    plt.figure()
-    plot_confusion_matrix(cm, classes=class_names, cmap=plt.cm.Oranges,
-                          title='Confusion matrix(DNN)')
-    plt.show()
-    fpr, tpr, threshold = roc_curve(y_test_data, y_pred_binarized)
-    roc_auc = auc(fpr, tpr)
-    plt.figure()
-    lw = 2
-    plt.figure(figsize=(10, 10))
-    plt.plot(fpr, tpr, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
-    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic')
-    plt.legend(loc="lower right")
-    plt.show()
-    precision, recall, thresholds = precision_recall_curve(
-        y_test_data, y_pred_binarized)
-    plt.figure("P-R Curve")
-    plt.plot(recall, precision, color='red', linewidth=1.0,
-             linestyle='--', label='P-R Curve (AP = %0.2f)' % AP)
-    plt.title('Precision/Recall Curve')
-    plt.legend(loc="lower right")
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.show()
+    print('Accuracy:', accuracy_score(y_test_data, y_pred_binarized))
+    print('Precision:', precision_score(y_test_data, y_pred_binarized))
+
+    # plt.figure()
+    # plot_confusion_matrix(cm, classes=class_names, normalize=True,
+    #                       title='Normalized confusion matrix(DNN)')
+    # plt.show()
+    # plt.figure()
+    # plot_confusion_matrix(cm, classes=class_names, cmap=plt.cm.Oranges,
+    #                       title='Confusion matrix(DNN)')
+    # plt.show()
+    # fpr, tpr, threshold = roc_curve(y_test_data, y_pred_binarized)
+    # roc_auc = auc(fpr, tpr)
+    # plt.figure()
+    # lw = 2
+    # plt.figure(figsize=(10, 10))
+    # plt.plot(fpr, tpr, color='darkorange',
+    #          lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)  # 假正率为横坐标，真正率为纵坐标做曲线
+    # plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.title('Receiver operating characteristic')
+    # plt.legend(loc="lower right")
+    # plt.show()
+    # precision, recall, thresholds = precision_recall_curve(
+    #     y_test_data, y_pred_binarized)
+    # plt.figure("P-R Curve")
+    # plt.plot(recall, precision, color='red', linewidth=1.0,
+    #          linestyle='--', label='P-R Curve (AP = %0.2f)' % AP)
+    # plt.title('Precision/Recall Curve')
+    # plt.legend(loc="lower right")
+    # plt.xlabel('Recall')
+    # plt.ylabel('Precision')
+    # plt.show()
 
     # # predict probabilities for test set
     # yhat_probs = test_model.predict(testX, verbose=0)
