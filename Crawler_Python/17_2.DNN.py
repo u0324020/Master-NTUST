@@ -92,25 +92,26 @@ def DNN_model(X, y, class_weights):
     model = Sequential(layers=None, name=None)
     stateful = True
     #============self=============#sgd一層128 LR:0.0001的效果最好
-    # model.add(Dense(128, input_dim=42,
-    #                 kernel_initializer='normal', activation='relu'))
-    # #model.add(Dense(256, activation='relu'))
-    # #model.add(Dropout(0.3, noise_shape=None, seed=21))
-    # #model.add(Dense(128, activation='relu'))
-    # model.add(Dense(1, activation='sigmoid'))
-    # #==========paper=============
-    model.add(Dense(42, input_dim=42,
+    model.add(Dense(128, input_dim=42,
                     kernel_initializer='normal', activation='relu'))
-    model.add(Dense(9, activation='relu'))
-    model.add(Dense(14, activation='relu'))
-    # model.add(Dropout(0.3, noise_shape=None, seed=21))
-    model.add(Dense(9, activation='relu'))
-    model.add(Dense(5, activation='relu'))
+    model.add(Dense(256, activation='relu'))
+    model.add(Dropout(0.3, noise_shape=None, seed=21))
+    model.add(Dense(128, activation='relu'))
     model.add(Dense(1, activation='sigmoid'))
+    # #==========paper=============
+    # model.add(Dense(42, input_dim=42,
+    #                 kernel_initializer='normal', activation='relu'))
+    # model.add(Dense(9, activation='relu'))
+    # model.add(Dense(14, activation='relu'))
+    # # model.add(Dropout(0.3, noise_shape=None, seed=21))
+    # model.add(Dense(9, activation='relu'))
+    # model.add(Dense(5, activation='relu'))
+    # model.add(Dense(1, activation='sigmoid'))
     model.summary()
-    sgd = optimizers.SGD(lr=0.00001, decay=1e-6, momentum=0.9, nesterov=True)
+    sgd = optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
     adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999,
                 epsilon=None, decay=0., amsgrad=False)
+    A = time.time()
     model.compile(optimizer=adam, loss='binary_crossentropy',
                   metrics=['accuracy'])
     # 8263 = epochs*batch_size
@@ -121,6 +122,8 @@ def DNN_model(X, y, class_weights):
     train_his = model.fit(
         X, y, epochs=45, validation_split=0.3, batch_size=184, shuffle=True, verbose=1, class_weight='auto')  # class_weight='auto',{0: 1, 1: 100} # epochs = training sample/batch_size
     print(train_his.history.keys())
+    B = time.time()
+    print('TIME:' + str(B - A))
     # #summarize history for accuracy
     plt.plot(train_his.history['acc'])
     plt.plot(train_his.history['val_acc'])
@@ -221,14 +224,14 @@ if __name__ == '__main__':
     print('Accuracy:', accuracy_score(y_test_data, y_pred_binarized))
     print('Precision:', precision_score(y_test_data, y_pred_binarized))
 
-    # plt.figure()
-    # plot_confusion_matrix(cm, classes=class_names, normalize=True,
-    #                       title='Normalized confusion matrix(DNN)')
-    # plt.show()
-    # plt.figure()
-    # plot_confusion_matrix(cm, classes=class_names, cmap=plt.cm.Oranges,
-    #                       title='Confusion matrix(DNN)')
-    # plt.show()
+    plt.figure()
+    plot_confusion_matrix(cm, classes=class_names, normalize=True,
+                          title='Normalized confusion matrix(DNN)')
+    plt.show()
+    plt.figure()
+    plot_confusion_matrix(cm, classes=class_names, cmap=plt.cm.Oranges,
+                          title='Confusion matrix(DNN)')
+    plt.show()
     # fpr, tpr, threshold = roc_curve(y_test_data, y_pred_binarized)
     # roc_auc = auc(fpr, tpr)
     # plt.figure()
