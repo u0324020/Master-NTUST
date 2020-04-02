@@ -36,6 +36,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import roc_curve, auc
 import itertools
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import mean_squared_error
 import time
 from sklearn.svm import SVC
 from sklearn.feature_selection import f_classif
@@ -826,7 +827,7 @@ def Weight_LightGBM(X, y, W):
 
     print("=======ClassWeight=======")
     #print(W)
-    gbm = lgb.LGBMClassifier(boosting_type='gbdt', num_leaves=31, max_depth=-1, learning_rate=0.1, n_estimators=100, subsample_for_bin=200000, objective='binary', class_weight=None, min_split_gain=0., min_child_weight=1e-3,
+    gbm = lgb.LGBMClassifier(boosting_type='gbdt', num_leaves=30,max_depth=-1, learning_rate=0.1, n_estimators=100, subsample_for_bin=200000, objective='binary', class_weight=None, min_split_gain=0., min_child_weight=1e-3,
                              min_child_samples=20, subsample=1., subsample_freq=0, colsample_bytree=1., reg_alpha=0., reg_lambda=0., random_state=None, n_jobs=-1, silent=True, importance_type='split', is_unbalance=True)
     # Fit model
     gbm.fit(X_train, y_train, eval_set=eval_set)
@@ -851,6 +852,7 @@ def Weight_LightGBM(X, y, W):
     plt.ylabel('Precision')
     plt.plot(recall, precision)
     plt.show()
+    
     A = time.time()
     train_sizes, train_loss, test_loss = learning_curve(
     gbm, X, y, cv=10, scoring='brier_score_loss', #https://www.studyai.cn/modules/model_evaluation.html
@@ -869,7 +871,27 @@ def Weight_LightGBM(X, y, W):
     plt.ylabel("Loss")
     plt.legend(loc="best")
     plt.show()
-    print(np.mean(test_loss_mean))
+    print('mean of loss:'+str(np.mean(test_loss_mean)))
+    #acc
+    A = time.time()
+    train_sizes, train_loss, test_loss = learning_curve(
+    gbm, X, y, cv=10, scoring='accuracy', #https://www.studyai.cn/modules/model_evaluation.html
+    train_sizes=[0.1, 0.25, 0.5, 0.75, 1]) #做5次的10Flod
+    
+    train_loss_mean = np.mean(train_loss, axis=1)
+    test_loss_mean = np.mean(test_loss, axis=1)
+    B = time.time()
+    print('TIME:', A - B)
+    plt.plot(train_sizes, train_loss_mean,color="royalblue",
+         label="Training")
+    plt.plot(train_sizes, test_loss_mean,color="orange",
+            label="Cross-validation")
+
+    plt.xlabel("Training examples")
+    plt.ylabel("Accuracy")
+    plt.legend(loc="best")
+    plt.show()
+    print('mean of Acc:'+str(np.mean(test_loss_mean)))
     return gbm
 
 
@@ -997,6 +1019,118 @@ def Test_light_rf(clf,X_test,y_test,X_train, y_train):
     plt.ylabel('Precision')
     plt.show()
 
+# boosting_type='gbdt', num_leaves=31, metric={'mean_absolute_error'},max_depth=-1,
+#  learning_rate=0.1, n_estimators=100, subsample_for_bin=200000, objective='binary', class_weight=None, min_split_gain=0., min_child_weight=1e-3,
+# min_child_samples=20, subsample=1., subsample_freq=0, colsample_bytree=1., 
+# reg_alpha=0., reg_lambda=0., random_state=None, n_jobs=-1, silent=True, importance_type='split', is_unbalance=True
+    
+
+def plt_lightGBM(X, y,test_X,test_y):
+    X_train, X_valid, y_train, y_valid = train_test_split(
+            X, y, test_size=0.3, random_state=12345)
+
+    # create dataset for lightgbm
+    lgb_train = lgb.Dataset(X_train, y_train)
+    lgb_valid = lgb.Dataset(X_valid, y_valid, reference=lgb_train)
+
+    # to record eval results for plotting
+    evals_result = {}
+    params = {
+    'task': 'train',
+    'boosting_type': 'gbdt',
+    'objective': 'binary',
+    'metric': {'auc','binary_logloss','binary_error'},#binary_logloss #binary_error auc
+    'num_leaves': 30,
+    'feature_fraction': 0.9,
+    'bagging_fraction': 0.8,
+    'bagging_freq': 5,
+    'min_data_in_leaf':4,
+    'learning_rate':0.1,
+    #'n_estimators':1000,
+     #'min_sum_hessian_in_leaf': 5,
+    'is_unbalance':True,
+    #'verbose':10
+    }
+
+    print('Start training...')
+
+    # train
+    gbm = lgb.train(params,
+                    lgb_train,
+                    num_boost_round=200,
+                    valid_sets=[lgb_train, lgb_valid],
+                    evals_result=evals_result,
+                    verbose_eval=10,
+                    early_stopping_rounds=50)
+    print('Start predicting...')
+    # predict
+    y_pred = gbm.predict(X_valid, num_iteration=gbm.best_iteration)
+
+    # eval rmse
+    print('\nThe rmse of prediction is:', mean_squared_error(y_valid, y_pred) ** 0.5)
+    print('Plot metrics during training...')
+    ax = lgb.plot_metric(evals_result, metric='binary_error')###
+    plt.show()
+    print('Feature重要性排序...')
+    ax = lgb.plot_importance(gbm)
+    plt.show()
+
+    # print('\nPredicting test set...')
+    # y_pred = gbm.predict(test_X, num_iteration=gbm.best_iteration)
+    
+    # # y_pred = model.predict(dtest)
+    # print("The rmse of loaded model's prediction is:",mean_squared_error(test_y, y_pred) ** 0.5)
+
+    # print("Finished.")
+
+    # from sklearn.model_selection import GridSearchCV
+    # estimator = lgb.LGBMRegressor()
+
+    # # get possible parameters
+    # estimator.get_params().keys()
+
+    # # fill parameters ad libitum
+    # param_grid = {
+    # 'num_leaves': [20, 30],    
+    # 'learning_rate': [0.01, 0.1],
+    # #     'n_estimators': [],
+    # #     'colsample_bytree' :[],
+    # #     'min_split_gain' :[],
+    # #     'subsample_for_bin' :[],
+    # #     'max_depth' :[],
+    # #     'subsample' :[], 
+    # #     'reg_alpha' :[], 
+    # #     'max_drop' :[], 
+    # #     'gaussian_eta' :[], 
+    # #     'drop_rate' :[], 
+    # #     'silent' :[], 
+    # #     'boosting_type' :[], 
+    # #     'min_child_weight' :[], 
+    # #     'skip_drop' :[], 
+    # #     'learning_rate' :[], 
+    # #     'fair_c' :[], 
+    # #     'seed' :[], 
+    # #     'poisson_max_delta_step' :[], 
+    # #     'subsample_freq' :[], 
+    # #     'max_bin' :[], 
+    # #     'n_estimators' :[], 
+    # #     'nthread' :[], 
+    # #     'min_child_samples' :[], 
+    # #     'huber_delta' :[], 
+    # #     'use_missing' :[], 
+    # #     'uniform_drop' :[], 
+    # #     'reg_lambda' :[], 
+    # #     'xgboost_dart_mode' :[], 
+    # #     'objective'
+    # }
+
+
+    # gbm = GridSearchCV(estimator, param_grid)
+
+    # gbm.fit(X_train, y_train)
+
+    # # list them
+    # print('Best parameters found by grid search are:', gbm.best_params_)
 if __name__ == '__main__':
     # train = loadtxt(
     #     "C:/Users/Jane/Desktop/NTU/Scam/Code/0319_imbalance_10w,0.25.csv", delimiter=",")
@@ -1022,7 +1156,8 @@ if __name__ == '__main__':
     #train = shuffle_train_Malicious + shuffle_train_Scams
     train = np.concatenate((shuffle_train_Malicious, shuffle_train_Scams))
     np.random.shuffle(train)
-    train_X = train[:, 0:42]
+    #train_X = np.column_stack((train[:, 0:19],train[:, 41]))
+    train_X = train[:, 19:42]
     train_y = train[:, 42]
     # Normalization
     min_max_scaler = preprocessing.MinMaxScaler()
@@ -1034,7 +1169,8 @@ if __name__ == '__main__':
         "C:/Users/Jane/Desktop/NTU/Scam/Code/0318_testing_balanced - 42.csv", delimiter=",")
     np.random.shuffle(test)
     min_max_scaler = preprocessing.MinMaxScaler()
-    test_X = test[:, 0:42]
+    test_X = test[:, 19:42]
+    #test_X = np.column_stack((test[:, 0:19],test[:, 41]))
     test_y = test[:, 42]
     #test_X = min_max_scaler.fit_transform(test_X)  # normalize
     # Weight_lightgbm_10fold(train_X, train_y, Weight)
@@ -1043,7 +1179,7 @@ if __name__ == '__main__':
     #model = SVM(train_X, train_y)
     #XGBoost_importance(train_X, train_y)
     # Random
-    gbm=Weight_LightGBM(train_X, train_y, Weight)
+    
     #Xgboost_10fold(train_X, train_y)
     # Smote
     #X, y = Smote_upsampling(train_X, train_y)
@@ -1051,10 +1187,12 @@ if __name__ == '__main__':
     # gbm=Xgboost(train_X, train_y)
     # gbm = Tree_10flod(train_X, train_y)
     #gbm = Weight_lightgbm_10fold(train_X, train_y, Weight)
-    joblib.dump(gbm, 'save_model/Lightgbm_10fold_Weight_gbdt_0318.pkl')
-    print("save model...")
-    gbm2 = joblib.load('save_model/Lightgbm_10fold_Weight_gbdt_0318.pkl')
-    Test_light_rf(gbm2, test_X, test_y,train_X, train_y)
+    plt_lightGBM(train_X, train_y,test_X,test_y)
+    # gbm=Weight_LightGBM(train_X, train_y, Weight)
+    # joblib.dump(gbm, 'save_model/Lightgbm_10fold_Weight_gbdt_0318.pkl')
+    # print("save model...")
+    # gbm2 = joblib.load('save_model/Lightgbm_10fold_Weight_gbdt_0318.pkl')
+    # Test_light_rf(gbm2, test_X, test_y,train_X, train_y)
     # print(Weight)
     #X1, y1 = SMOTEENN_upsampling(train_X, train_y)
     #X2, y2 = SMOTETomek_upsampling(train_X, train_y)
